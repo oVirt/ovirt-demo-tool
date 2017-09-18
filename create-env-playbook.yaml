@@ -1,0 +1,76 @@
+- hosts: localhost
+  connection: local
+  gather_facts: no
+  vars_files:
+    - "{{ suite_path }}/vars.yaml"
+  roles:
+    - lago_env
+
+- hosts: all
+  any_errors_fatal: True
+  gather_facts: no
+  tasks:
+    - name: Wait for ssh
+      wait_for:
+        port: 22
+        host: "{{ ansible_host }}"
+        search_regex: OpenSSH
+        delay: 10
+      delegate_to: localhost
+      connection: local
+
+- include: "{{ suite_path }}/deploy-playbook.yaml"
+  tags: deploy-env
+
+- hosts: localhost
+  connection: local
+  vars_files:
+    - "{{ suite_path }}/vars.yaml"
+  tasks:
+    - name: Export env
+      command: >
+        lago --out-format yaml
+          export
+          --dst-dir "{{ exported_env }}"
+          --standalone
+    - name: Modify LagoInitFile
+      command: >
+        python
+          "{{ utils }}/modify_init.py"
+          "{{ exported_env }}/LagoInitFile"
+    - name: Destroy env
+      command: lago destroy -y
+    - name: Compress exported env
+      shell: |
+        tar -cvS * | xz -T 0 -v --stdout > "{{ suite_name }}.tar.xz"
+      args:
+        chdir: "{{ exported_env }}"
+      tags: compress
+    - name: Create hash for the archive
+      shell: |
+        md5sum "{{ suite_name }}.tar.xz" > "{{ suite_name }}.tar.xz.md5"
+      args:
+        chdir: "{{ exported_env }}"
+      tags: create-hash
+    - name: Collect archive and hash
+      shell: |
+        [[ -d "$BUILD_NUMBER" ]] || mkdir "$BUILD_NUMBER"
+        mv "{{ exported_env }}"/*.tar.xz* "$BUILD_NUMBER"
+      tags: collect-artifacts
+
+- include: "{{ suite_path }}/test-playbook.yaml"
+  tags: run-tests
+
+- hosts: localhost
+  connection: local
+  vars_files:
+    - "{{ suite_path }}/vars.yaml"
+  tasks:
+    - name: Deploy archive to remote server
+      shell: |
+        echo "$SSH_KEY" > key
+        chmod 600 key
+        scp -i key -r \
+          "$BUILD_NUMBER" \
+          "{{ srv.username }}"@"{{ srv.hostname }}":"{{ srv.path }}"
+      tags: deploy-to-repo

@@ -1,0 +1,8 @@
+- name: SSH_KEY
+  valueFrom:
+    secretKeyRef:
+      name: ovirt-demo-tool
+      key: ssh-key
+- name: BUILD_NUMBER
+  valueFrom:
+    runtimeEnv: BUILD_NUMBER

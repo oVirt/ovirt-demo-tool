@@ -1,0 +1,75 @@
+nat-settings: &nat-settings
+    type: nat
+    dhcp:
+      start: 100
+      end: 254
+    management: False
+
+vm-common-settings: &vm-common-settings
+    root-password: 123456
+    service_provider: systemd
+    artifacts:
+      - /var/log
+
+vdsm-host-settings: &vdsm-host-settings
+    <<: *vm-common-settings
+    vm-type: ovirt-host
+    memory: 2047
+    nics:
+      - net: lago-basic-suite-4-1-net-management
+      - net: lago-basic-suite-4-1-net-storage
+      - net: lago-basic-suite-4-1-net-bonding
+      - net: lago-basic-suite-4-1-net-bonding
+    disks:
+      - template_name: el7.4-base
+        type: template
+        name: root
+        dev: vda
+        format: qcow2
+
+domains:
+  lago-basic-suite-4-1-engine:
+    <<: *vm-common-settings
+    vm-type: ovirt-engine
+    memory: 4096
+    nics:
+      - net: lago-basic-suite-4-1-net-management
+      - net: lago-basic-suite-4-1-net-storage
+    disks:
+      - template_name: el7.4-base
+        type: template
+        name: root
+        dev: vda
+        format: qcow2
+      - comment: Main NFS device
+        size: 101G
+        type: empty
+        name: nfs
+        dev: sda
+        format: raw
+      - comment: Main iSCSI device
+        size: 101G
+        type: empty
+        name: iscsi
+        dev: sdc
+        format: raw
+    metadata:
+      ovirt-engine-password: 123
+    artifacts:
+      - /var/log
+      - /root/fluentd
+
+  lago-basic-suite-4-1-host-0:
+    <<: *vdsm-host-settings
+  lago-basic-suite-4-1-host-1:
+    <<: *vdsm-host-settings
+
+nets:
+  lago-basic-suite-4-1-net-management:
+    <<: *nat-settings
+    management: true
+    dns_domain_name: lago.local
+  lago-basic-suite-4-1-net-bonding:
+    <<: *nat-settings
+  lago-basic-suite-4-1-net-storage:
+    <<: *nat-settings
