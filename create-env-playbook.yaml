@@ -70,7 +70,7 @@
       shell: |
         echo "$SSH_KEY" > key
         chmod 600 key
-        scp -i key -r \
+        scp -i key -r -o 'StrictHostKeyChecking=no' \
           "$BUILD_NUMBER" \
           "{{ srv.username }}"@"{{ srv.hostname }}":"{{ srv.path }}"
       tags: deploy-to-repo
