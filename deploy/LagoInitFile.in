@@ -21,11 +21,14 @@ vdsm-host-settings: &vdsm-host-settings
       - net: lago-{{ suite_name }}-net-bonding
       - net: lago-{{ suite_name }}-net-bonding
     disks:
-      - template_name: {{ templates['host'] }}
+      - template_name: {{ host_template }}
         type: template
         name: root
         dev: vda
         format: qcow2
+    metadata:
+      deploy-scripts:
+        - $LAGO_INITFILE_PATH/shell_scripts/install_release_rpm.sh
 
 domains:
   lago-{{ suite_name }}-engine:
@@ -36,7 +39,7 @@ domains:
       - net: lago-{{ suite_name}}-net-management
       - net: lago-{{ suite_name}}-net-storage
     disks:
-      - template_name: {{ templates['engine'] }}
+      - template_name: {{ engine_template }}
         type: template
         name: root
         dev: vda
@@ -55,11 +58,14 @@ domains:
         format: raw
     metadata:
       ovirt-engine-password: 123
+      deploy-scripts:
+        - $LAGO_INITFILE_PATH/shell_scripts/install_release_rpm.sh
+        - $LAGO_INITFILE_PATH/shell_scripts/setup_storage_unified_el7.sh
+        - $LAGO_INITFILE_PATH/shell_scripts/setup_engine.sh
     artifacts:
       - /var/log
-      - /root/fluentd
 
-{% for i in range(host_count) %}
+{% for i in range(host_count|int) %}
   lago-{{ suite_name }}-host-{{ i }}:
     <<: *vdsm-host-settings
 {% endfor %}

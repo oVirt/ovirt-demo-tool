@@ -16,7 +16,3 @@ mocker-*
 *.iml
 .idea
 .pydevproject
-
-# Ansible files
-###############
-*.retry

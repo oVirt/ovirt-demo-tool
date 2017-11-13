@@ -1,4 +1,0 @@
-- name: Install storage and LDAP
-  script: "setup_storage_unified_el7.sh"
-  any_errors_fatal: True
-  tags: install_storage

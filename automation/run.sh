@@ -1,8 +1,7 @@
 #!/bin/bash -xe
-source "${0%/*}/common.sh"
 
 cleanup() {
-    env_cleanup
+    ./create_env.sh --cleanup
     exit
 }
 
@@ -13,22 +12,12 @@ export LIBGUESTFS_BACKEND=direct
 ! [[ -c "/dev/kvm" ]] && mknod /dev/kvm c 10 232
 # uncomment the next lines for extra verbose output
 export LIBGUESTFS_DEBUG=1 LIBGUESTFS_TRACE=1
+extra_args=()
 
-trap 'cleanup "$run_path"' SIGTERM SIGINT SIGQUIT EXIT
+trap 'cleanup' SIGTERM SIGINT SIGQUIT EXIT SIGHUP
 
-suite_path="$(realpath deploy)"
-# For testing outside of jenkins
-export BUILD_NUMBER="${BUILD_NUMBER:-1}"
-
-if [[ ${0##*/} == check-patch.sh ]]; then
-    skip_tags="deploy-to-repo"
+if [[ ${0##*/} == check-merged.sh ]]; then
+    extra_args+=("--copy-to-remote")
 fi
 
-ANSIBLE_CONFIG=ansible.cfg \
-    ansible-playbook \
-        -i inventory \
-        -u root \
-        --skip-tags="$skip_tags" \
-        -e "repo_root=${PWD} suite_path=${suite_path}" \
-        -v \
-        create-env-playbook.yaml
+./create_env.sh "${extra_args[@]}"

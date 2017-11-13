@@ -1,7 +1,0 @@
-- hosts: localhost
-  any_errors_fatal: True
-  connection: local
-  tasks:
-    - name: Run tests
-      debug:
-        msg: Dummy test
