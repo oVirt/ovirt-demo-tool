@@ -26,11 +26,12 @@ from ovirtlago import testlib
 
 
 @testlib.with_ovirt_prefix
-def test_initialize_engine(prefix):
+def initialize_engine(prefix):
     engine = prefix.virt_env.engine_vm()
 
+    answer_file_src = os.path.join(os.environ.get('ENGINE_ANSWER_FILE'))
     engine.copy_to(
-        os.environ.get('ENGINE_ANSWER_FILE'),
+        answer_file_src,
         '/tmp/answer-file',
     )
 
@@ -65,6 +66,17 @@ def test_initialize_engine(prefix):
         result.code, 0, 'engine-setup failed. Exit code is %s' % result.code
     )
 
+    result = engine.ssh(
+        [
+            'systemctl',
+            'start',
+            'ovirt-engine-notifier',
+        ],
+    )
+    nt.eq_(
+        result.code, 0, 'engine-ovirt-notifier failed. Exit code is %s' % result.code
+    )
+
     # Remove YUM leftovers that are in /dev/shm/* - just takes up memory.
     result = engine.ssh(
         [
@@ -76,16 +88,6 @@ def test_initialize_engine(prefix):
         ]
     )
 
-    # TODO: set iSCSI, NFS, LDAP ports in firewall & re-enable it.
-    result = engine.ssh([
-        'systemctl',
-        'stop',
-        'firewalld',
-    ], )
-    nt.eq_(
-        result.code, 0, 'firwalld not stopped. Exit code is %s' % result.code
-    )
-
     testlib.assert_true_within_long(
         lambda: engine.service('ovirt-engine').alive()
     )
@@ -93,3 +95,34 @@ def test_initialize_engine(prefix):
     testlib.assert_true_within_short(
         lambda: engine.service('ovirt-engine-dwhd').alive()
     )
+    testlib.assert_true_within_short(
+        lambda: engine.service('ovirt-engine-notifier').alive()
+    )
+
+
+@testlib.with_ovirt_prefix
+def engine_config(prefix):
+    engine = prefix.virt_env.engine_vm()
+
+    result = engine.ssh(
+        [
+            'engine-config',
+            '--set',
+            'VdsLocalDisksLowFreeSpace=400',
+        ],
+    )
+    nt.eq_(
+        result.code, 0, 'engine-config failed. Exit code is %s' % result.code
+    )
+
+
+_TEST_LIST = [
+    initialize_engine,
+    engine_config,
+]
+
+
+def test_gen():
+    for t in testlib.test_sequence_gen(_TEST_LIST):
+        test_gen.__name__ = t.description
+        yield t
