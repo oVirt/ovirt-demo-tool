@@ -193,8 +193,10 @@ copy_lago_log() {
 do_copy_to_remote() {
     # $SSH_KEY is injected by jenkins
     local src=${1:?}
-
-    echo "$SSH_KEY" > key
+    (
+        set +x
+        echo "$SSH_KEY" > key
+    )
     chmod 600 key
     scp -i key -r -o 'StrictHostKeyChecking=no' \
     "$src" \
