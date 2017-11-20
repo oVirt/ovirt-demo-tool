@@ -8,3 +8,7 @@ lago
 lago-ovirt
 ovirt-engine-sdk-python
 python-ovirt-engine-sdk4
+# Docs
+mkdocs
+fontawesome-fonts-web
+python-setuptools

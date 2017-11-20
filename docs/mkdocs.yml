@@ -1,0 +1,14 @@
+site_name: oVirt-Orb Docs
+site_description: Run self-contained oVirt environment in minutes
+site_author: oVirt-Orb team
+site_dir: docs-out
+use_directory_urls: false
+theme: readthedocs
+repo_url: https://gerrit.ovirt.org/ovirt-demo-tool
+repo_name: Gerrit
+pages:
+    - Home: index.markdown
+    - Installation: installation.markdown
+    - 'Running the environment': run.markdown
+    - Developers: developers.markdown
+    - FAQ: faq.markdown
