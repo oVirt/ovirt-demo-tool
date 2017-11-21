@@ -83,6 +83,7 @@ control.deploy() {
 control.test() {
     local archive="${1:?}"
     local test_dir="${REPO_ROOT}/test_env"
+    local failed=false
     PREFIX="${test_dir}/.lago"
 
     mkdir "$test_dir"
@@ -90,9 +91,13 @@ control.test() {
     xz --decompress --stdout "$archive" | tar -xv
 
     env_init "$TEMPLATE_REPO_PATH" "${test_dir}/LagoInitFile"
-    env_ovirt_start
+    env_ovirt_start || failed=true
+    env_collect "${LOGS_DIR}/test_start_env"
+    if "$failed"; then
+        logger.error "Failed to start exported env"
+        exit 1
+    fi
     sleep 30
-
     run_sdk_test_scripts
     env_stop
     cd "$REPO_ROOT"
