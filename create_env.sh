@@ -175,9 +175,9 @@ mv_junit_xml() {
 
     [[ -e "$dest" ]] || mkdir -p "$dest"
 
-    cd "$PREFIX"
-        mv current/*.junit.xml "$dest"
-    cd -
+    find "${PREFIX}/current" \
+        -name "*.junit.xml" \
+        -exec mv {} "$dest" \;
 }
 
 copy_lago_log() {
