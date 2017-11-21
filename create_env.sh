@@ -75,6 +75,30 @@ env_libvirt_cleanup() {
     logger.success "Cleaning with libvirt Done"
 }
 
+get_version() {
+    : '
+        The scheme is as follows:
+        [oVirt_version]-[image_version].revision
+
+        This function will modify the output of git describe
+        to match the scheme above.
+
+        example:
+        4.2.0-0-1-g9577328 -> 4.2.0-0.1.g9577328
+        4.2.0-1 -> 4.2.0-0.0
+    '
+    local version="$(git describe --tags)"
+    local prefix="${version%%-*}"
+    local suffix="${version#*-}"
+    if [[ "$suffix" =~ ^[0-9]+$ ]]; then
+        suffix="0.0"
+    else
+        suffix="${suffix//-/.}"
+    fi
+
+    echo "${prefix}-${suffix}"
+}
+
 env_init () {
     local template_repo="${1:?}"
     local initfile="${2:?}"
@@ -204,13 +228,16 @@ do_copy_to_remote() {
 }
 
 main() {
-    local export_dir="${REPO_ROOT}/${BUILD_NUMBER:-1}"
+    local version="$(get_version)"
+    local export_dir="${REPO_ROOT}/${version}"
+    local artifact_name="${SUITE_NAME}-${version}"
+
     logger.info "Building images"
     control.deploy
-    export_env "$export_dir" "$SUITE_NAME"
+    export_env "$export_dir" "$artifact_name"
     env_destroy
     logger.info "Testing images"
-    control.test "${export_dir}/${SUITE_NAME}.tar.xz"
+    control.test "${export_dir}/${artifact_name}.tar.xz"
 
     if "$COPY_TO_REMOTE"; then
         logger.info Copy images to remote server
