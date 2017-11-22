@@ -230,7 +230,7 @@ do_copy_to_remote() {
 main() {
     local version="$(get_version)"
     local export_dir="${REPO_ROOT}/${version}"
-    local artifact_name="${SUITE_NAME}-${version}"
+    local artifact_name="${ARTIFACT_NAME}-${version}"
 
     logger.info "Building images"
     control.deploy
