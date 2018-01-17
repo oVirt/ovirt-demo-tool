@@ -57,6 +57,18 @@ env_ovirt_stop () {
     cd -
 }
 
+env_configure_extra_repos() {
+    local repos_file="${DEPLOY}/extra_repos.repo"
+
+    ! [[ -f "$repos_file" ]] && return 0
+
+    cd "$PREFIX"
+    for vm in $(env_list_running_vms); do
+        lago copy-to-vm "$vm" "$repos_file" "/etc/yum.repos.d/"
+    done
+    cd -
+}
+
 control.deploy() {
     suite_name="$SUITE_NAME" \
     engine_template="$ENGINE_TEMPLATE" \
@@ -74,6 +86,7 @@ control.deploy() {
 
     env_init "$TEMPLATE_REPO_PATH" "${DEPLOY}/LagoInitFile"
     env_start
+    env_configure_extra_repos
     env_deploy
     run_sdk_deploy_scripts
     sleep 15
