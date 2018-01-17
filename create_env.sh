@@ -182,6 +182,20 @@ env_status () {
     cd -
 }
 
+env_list_running_vms() {
+    local vms
+
+    cd "$PREFIX"
+    vms=$(\
+        lago --out-format=flat status |\
+        grep -E "^VMs/(.*)/status: running$" |\
+        awk -F '/' \{'print $2'\}\
+        )
+    cd - > /dev/null
+
+    echo "$vms"
+}
+
 env_collect () {
     local tests_out_dir="${1?}"
 
