@@ -29,6 +29,7 @@ vdsm-host-settings: &vdsm-host-settings
     metadata:
       deploy-scripts:
         - $LAGO_INITFILE_PATH/shell_scripts/install_release_rpm.sh
+        - $LAGO_INITFILE_PATH/shell_scripts/setup_host_el7.sh
 
 domains:
   lago-{{ suite_name }}-engine:
