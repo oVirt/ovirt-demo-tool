@@ -213,7 +213,7 @@ mv_junit_xml() {
 
     [[ -e "$dest" ]] || mkdir -p "$dest"
 
-    find "${PREFIX}/current" \
+    find -L "${PREFIX}/current" \
         -name "*.junit.xml" \
         -exec mv {} "$dest" \;
 }
