@@ -269,36 +269,8 @@ def add_dc_quota_3(api):
 
 @testlib.with_ovirt_prefix
 def add_cluster(prefix):
-    if API_V4:
-        add_cluster_4(prefix)
-    else:
-        add_cluster_3(prefix)
-
-
-def add_cluster_3(prefix):
-    cpu_family = prefix.virt_env.get_ovirt_cpu_family()
-    api = prefix.virt_env.engine_vm().get_api()
-    p = params.Cluster(
-        name=CLUSTER_NAME,
-        cpu=params.CPU(
-            id=cpu_family,
-        ),
-        version=params.Version(
-            major=DC_VER_MAJ,
-            minor=DC_VER_MIN,
-        ),
-        data_center=params.DataCenter(
-            name=DC_NAME,
-        ),
-        ballooning_enabled=True,
-    )
-    nt.assert_true(api.clusters.add(p))
-
-
-def add_cluster_4(prefix):
     api = prefix.virt_env.engine_vm().get_api(api_ver=4)
     engine = api.system_service()
-    cpu_family = prefix.virt_env.get_ovirt_cpu_family()
     clusters_service = engine.clusters_service()
     provider_id = network_utils_v4.get_default_ovn_provider_id(engine)
     nt.assert_true(
@@ -306,10 +278,6 @@ def add_cluster_4(prefix):
             sdk4.types.Cluster(
                 name=CLUSTER_NAME,
                 description='APIv4 Cluster',
-                cpu=sdk4.types.Cpu(
-                    architecture=sdk4.types.Architecture.X86_64,
-                    type=cpu_family,
-                ),
                 data_center=sdk4.types.DataCenter(
                     name=DC_NAME,
                 ),
