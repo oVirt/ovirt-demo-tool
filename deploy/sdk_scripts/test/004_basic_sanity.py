@@ -941,9 +941,9 @@ def suspend_resume_vm(api):
 
 @testlib.with_ovirt_api
 def verify_suspend_resume_vm(api):
-    testlib.assert_true_within_long(
-        lambda:
-        api.vms.get(VM0_NAME).status.state == 'up'
+    testlib.assert_true_within(
+        func=lambda: api.vms.get(VM0_NAME).status.state == 'up',
+        timeout=20*60
     )
 
 
