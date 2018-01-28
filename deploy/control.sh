@@ -1,4 +1,5 @@
 #!/bin/bash -ex
+set -o pipefail
 
 readonly DEPLOY="$(realpath "$(dirname $BASH_SOURCE)")"
 source "${DEPLOY}/control_config.sh"
@@ -46,9 +47,13 @@ run_sdk_test_scripts() {
 }
 
 env_ovirt_start() {
+    local res=0
+
     cd $PREFIX
-    lago ovirt start
+    lago ovirt start || res=$?
     cd -
+
+    return "$res"
 }
 
 env_ovirt_stop () {
