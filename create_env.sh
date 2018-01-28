@@ -1,4 +1,5 @@
 #!/bin/bash -ex
+set -o pipefail
 
 readonly REPO_ROOT="$PWD"
 readonly ARTIFACTS_DIR="${REPO_ROOT}/exported-artifacts"
@@ -11,7 +12,6 @@ source deploy/control.sh
 source utils/logger.sh
 
 env_cleanup() {
-
     local res=0
     local uuid
 
@@ -40,29 +40,36 @@ env_cleanup() {
 env_libvirt_cleanup() {
     local suite="${1?}"
     local uid="${2}"
+    local domains
     local domain
+    local nets
     local net
+
     if [[ "$uid" != "" ]]; then
-        local domains=($( \
+        domains=($( \
             virsh -c qemu:///system list --all --name \
             | egrep "$uid*" \
+            || :
         ))
-        local nets=($( \
+        nets=($( \
             virsh -c qemu:///system net-list --all \
             | egrep "$uid*" \
             | awk '{print $1;}' \
+            || :
         ))
     else
-        local domains=($( \
+        domains=($( \
             virsh -c qemu:///system list --all --name \
             | egrep "[[:alnum:]]*-lago-${suite}-" \
             | egrep -v "vdsm-ovirtmgmt" \
+            || :
         ))
-        local nets=($( \
+        nets=($( \
             virsh -c qemu:///system net-list --all \
             | egrep -w "[[:alnum:]]{4}-.*" \
             | egrep -v "vdsm-ovirtmgmt" \
             | awk '{print $1;}' \
+            || :
         ))
     fi
     logger.info "Cleaning with libvirt"
@@ -87,9 +94,10 @@ get_version() {
         4.2.0-0-1-g9577328 -> 4.2.0-0.1.g9577328
         4.2.0-1 -> 4.2.0-0.0
     '
-    local version="$(git describe --tags)"
+    local version && version="$(git describe --tags)"
     local prefix="${version%%-*}"
     local suffix="${version#*-}"
+
     if [[ "$suffix" =~ ^[0-9]+$ ]]; then
         suffix="0.0"
     else
@@ -116,7 +124,7 @@ render_jinja_templates () {
     python \
         "${REPO_ROOT}/utils/render_jinja_templates.py" \
         "$in" > "$out"
-    }
+}
 
 env_start() {
     cd "$PREFIX"
@@ -138,6 +146,8 @@ env_create_images() {
     local export_dir="${1:?}"
     local archive_name="${2:?}.tar.xz"
     local checksum_name="${archive_name}.md5"
+    local res=0
+    local files
 
     [[ -e "$export_dir" ]] || mkdir -p "$export_dir"
 
@@ -145,16 +155,22 @@ env_create_images() {
     lago --out-format yaml \
         export \
         --dst-dir "$export_dir" \
-        --standalone
+        --standalone \
+    || res=$?
     cd -
-    cd $export_dir
-    python "${REPO_ROOT}/utils/modify_init.py" LagoInitFile
-    local files=($(ls "$export_dir"))
-    tar -cvS "${files[@]}" | xz -T 0 -v --stdout > "$archive_name"
-    md5sum "$archive_name" > "$checksum_name"
-    md5sum -c "$checksum_name"
-    rm -f "${files[@]}"
+    [[ $res -ne 0 ]] && return $res
+
+    cd "$export_dir"
+    python "${REPO_ROOT}/utils/modify_init.py" LagoInitFile \
+    && files=($(ls "$export_dir")) \
+    && tar -cvS "${files[@]}" | xz -T 0 -v --stdout > "$archive_name" \
+    && md5sum "$archive_name" > "$checksum_name" \
+    && md5sum -c "$checksum_name" \
+    && rm -f "${files[@]}" \
+    || res=$?
     cd -
+
+    return $res
 }
 
 export_env() {
@@ -242,7 +258,7 @@ do_copy_to_remote() {
 }
 
 main() {
-    local version="$(get_version)"
+    local version && version="$(get_version)"
     local export_dir="${REPO_ROOT}/${version}"
     local artifact_name="${ARTIFACT_NAME}-${version}"
 
