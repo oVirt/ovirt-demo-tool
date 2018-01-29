@@ -15,6 +15,7 @@ vdsm-host-settings: &vdsm-host-settings
     <<: *vm-common-settings
     vm-type: ovirt-host
     memory: 2047
+    cpu_model: SandyBridge
     nics:
       - net: lago-{{ suite_name }}-net-management
       - net: lago-{{ suite_name }}-net-storage
@@ -36,6 +37,7 @@ domains:
     <<: *vm-common-settings
     vm-type: ovirt-engine
     memory: 4096
+    cpu_model: SandyBridge
     nics:
       - net: lago-{{ suite_name}}-net-management
       - net: lago-{{ suite_name}}-net-storage
