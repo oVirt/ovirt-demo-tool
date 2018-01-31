@@ -7,8 +7,7 @@ theme: readthedocs
 repo_url: https://gerrit.ovirt.org/ovirt-demo-tool
 repo_name: Gerrit
 pages:
-    - Home: index.markdown
-    - Installation: installation.markdown
-    - 'Running the environment': run.markdown
-    - Developers: developers.markdown
-    - FAQ: faq.markdown
+  - Home: index.markdown
+  - Installation: installation.markdown
+  - 'Running the environment': run.markdown
+  - FAQ: faq.markdown

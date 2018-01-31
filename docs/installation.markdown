@@ -8,10 +8,8 @@ Currently Orb can run on either supported Fedora versions or Centos 7.
 
 ### CPU
 
-Any of the Intel/AMD CPUs that are supported in oVirt. Checkout the full list: [oVirt supported CPU list].
-
-**NOTE:** Other CPU models of Intel/AMD will might work also, but
-are not recommended.
+Orb is currently supported on Intel's CPUs.
+The CPU model should be `Sandy Bridge` or newer.
 
 ### Disk Space
 
@@ -27,6 +25,12 @@ Orb requires that your system will have at least 8GB of RAM.
 ### Install Lago
 
 [Lago installation manual]
+
+### Install Lago oVirt plugin
+
+[Lago oVirt plugin installation manual]
+
+**NOTE:** This step is not needed if you installed Lago with the install script.
 
 ### Install oVirt-engine Python SDK v4
 
@@ -58,7 +62,8 @@ xz --decompress --stdout [Orb version].tar.xz | tar -xv
 
 You are now ready to [run] Orb !
 
-[Lago-Installation]: http://lago.readthedocs.io/en/latest/Installation.html
+[Lago installation manual]: http://lago.readthedocs.io/en/latest/Installation.html
+[Lago oVirt plugin installation manual]: http://lago-ost-plugin.readthedocs.io/en/latest/Installation.html
 [Orb]: http://templates.ovirt.org/bundles/ovirt-demo-tool/
 [run]: run.markdown
 [oVirt supported CPU list]: https://www.ovirt.org/documentation/install-guide/chap-System_Requirements/#hypervisor-requirements

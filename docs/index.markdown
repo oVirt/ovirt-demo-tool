@@ -18,6 +18,6 @@ will be empty.
 
 ## Support
 
-For any further questions or help, please send email to lago-devel@ovirt.org or infra@ovirt.org.
+For any further questions or help, please send an email to infra@ovirt.org.
 
 [Lago]: http://lago.readthedocs.io/en/latest/index.html
