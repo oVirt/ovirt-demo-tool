@@ -20,3 +20,5 @@ RELEASE_RPM=http://resources.ovirt.org/pub/yum-repo/ovirt-release42.rpm
 ENGINE_TEMPLATE=el7.4-base-1
 HOST_TEMPLATE=el7.4-base-1
 HOST_COUNT=2
+
+TAG_PATTERN='4*'

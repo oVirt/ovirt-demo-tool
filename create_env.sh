@@ -94,7 +94,8 @@ get_version() {
         4.2.0-0-1-g9577328 -> 4.2.0-0.1.g9577328
         4.2.0-1 -> 4.2.0-0.0
     '
-    local version && version="$(git describe --tags)"
+    local tag_pattern=${1:-'*'}
+    local version && version="$(git describe --tags --match "$tag_pattern")"
     local prefix="${version%%-*}"
     local suffix="${version#*-}"
 
@@ -258,7 +259,7 @@ do_copy_to_remote() {
 }
 
 main() {
-    local version && version="$(get_version)"
+    local version && version="$(get_version "$TAG_PATTERN")"
     local export_dir="${REPO_ROOT}/${version}"
     local artifact_name="${ARTIFACT_NAME}-${version}"
 
