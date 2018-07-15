@@ -30,6 +30,7 @@ from ovirtlago import testlib
 
 import ovirtsdk4.types as types
 
+import uuid
 import time
 
 import test_utils
@@ -270,13 +271,11 @@ def add_directlun(prefix):
 @testlib.with_ovirt_api4
 def snapshot_cold_merge(api):
     engine = api.system_service()
-    vm_service = test_utils.get_vm_service(engine, VM1_NAME)
-
-    if vm_service is None:
+    vm1_snapshots_service = test_utils.get_vm_snapshots_service(engine, VM1_NAME)
+    if vm1_snapshots_service is None:
         raise SkipTest('Glance is not available')
 
-    snapshots_service = vm_service.snapshots_service()
-    disk = engine.disks_service().list(search=DISK1_NAME)[0]
+    disk = engine.disks_service().list(search='name={}'.format(DISK1_NAME))[0]
 
     dead_snap1_params = types.Snapshot(
         description=SNAPSHOT_DESC_1,
@@ -289,12 +288,18 @@ def snapshot_cold_merge(api):
             )
         ]
     )
+    correlation_id = uuid.uuid4()
 
-    snapshots_service.add(dead_snap1_params)
+    vm1_snapshots_service.add(dead_snap1_params,
+                              query={'correlation_id': correlation_id})
 
     testlib.assert_true_within_long(
         lambda:
-        snapshots_service.list()[-1].snapshot_status == types.SnapshotStatus.OK
+        test_utils.all_jobs_finished(engine, correlation_id)
+    )
+    testlib.assert_true_within_long(
+        lambda:
+        vm1_snapshots_service.list()[-1].snapshot_status == types.SnapshotStatus.OK
     )
 
     dead_snap2_params = types.Snapshot(
@@ -308,25 +313,30 @@ def snapshot_cold_merge(api):
             )
         ]
     )
+    correlation_id_snap2 = uuid.uuid4()
 
-    snapshots_service.add(dead_snap2_params)
+    vm1_snapshots_service.add(dead_snap2_params,
+                              query={'correlation_id': correlation_id_snap2})
 
     testlib.assert_true_within_long(
         lambda:
-        snapshots_service.list()[-1].snapshot_status == types.SnapshotStatus.OK
+        test_utils.all_jobs_finished(engine, correlation_id_snap2)
+    )
+    testlib.assert_true_within_long(
+        lambda:
+        vm1_snapshots_service.list()[-1].snapshot_status == types.SnapshotStatus.OK
     )
 
-    snapshot = snapshots_service.list()[-2]
-    snapshots_service.snapshot_service(snapshot.id).remove()
+    snapshot = vm1_snapshots_service.list()[-2]
+    vm1_snapshots_service.snapshot_service(snapshot.id).remove()
 
     testlib.assert_true_within_long(
         lambda:
-        (len(snapshots_service.list()) == 2) and
-        (
-            snapshots_service.list()[-1].snapshot_status == (
-                types.SnapshotStatus.OK
-            )
-        ),
+        len(vm1_snapshots_service.list()) == 2
+    )
+    testlib.assert_true_within_long(
+        lambda:
+        vm1_snapshots_service.list()[-1].snapshot_status == types.SnapshotStatus.OK
     )
 
 
@@ -347,38 +357,44 @@ def cold_storage_migration(api):
 
         testlib.assert_true_within_long(
             lambda: api.follow_link(
-                disk_service.get().storage_domains[0]
-            ).name == domain and (
-                disk_service.get().status == types.DiskStatus.OK
-            )
+                disk_service.get().storage_domains[0]).name == domain
+        )
+        testlib.assert_true_within_long(
+            lambda:
+            disk_service.get().status == types.DiskStatus.OK
         )
 
 
 @testlib.with_ovirt_api4
 def live_storage_migration(api):
     engine = api.system_service()
-    vm_service = test_utils.get_vm_service(engine, VM0_NAME)
     disk_service = test_utils.get_disk_service(engine, DISK0_NAME)
+    correlation_id = uuid.uuid4()
     disk_service.move(
         async=False,
         filter=False,
         storage_domain=types.StorageDomain(
             name=SD_ISCSI_NAME
-        )
+        ),
+        query={'correlation_id': correlation_id}
     )
 
-    snapshots_service = vm_service.snapshots_service()
+    testlib.assert_true_within_long(lambda: test_utils.all_jobs_finished(engine, correlation_id))
+
     # Assert that the disk is on the correct storage domain,
     # its status is OK and the snapshot created for the migration
     # has been merged
-    testlib.assert_equals_within_long(
-        lambda: api.follow_link(disk_service.get().storage_domains[0]).name == SD_ISCSI_NAME and \
-                len(snapshots_service.list()) == 1 and \
-                disk_service.get().status, types.DiskStatus.OK)
+    testlib.assert_true_within_long(
+        lambda: api.follow_link(disk_service.get().storage_domains[0]).name == SD_ISCSI_NAME
+    )
 
-    # This sleep is a temporary solution to the race condition
-    # https://bugzilla.redhat.com/1456504
-    time.sleep(3)
+    vm0_snapshots_service = test_utils.get_vm_snapshots_service(engine, VM0_NAME)
+    testlib.assert_true_within_long(
+        lambda: len(vm0_snapshots_service.list()) == 1
+    )
+    testlib.assert_true_within_long(
+        lambda: disk_service.get().status == types.DiskStatus.OK
+    )
 
 
 @testlib.with_ovirt_api4
