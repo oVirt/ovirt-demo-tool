@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Red Hat, Inc.
+# Copyright 2018 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,5 +18,29 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-DEFAULT_OVN_PROVIDER_NAME = 'ovirt-provider-ovn'
-ADD_HOST_TIMEOUT = 20 * 60
+
+import os
+
+
+_DC_VERSION = '4.2'
+
+
+def cluster_version():
+    version = os.getenv('OST_DC_VERSION', _DC_VERSION).split('.')
+    return [int(v) for v in version]
+
+
+def _cluster_version_ok(major, minor):
+    current = cluster_version()
+    return (current[0] > major or
+            (current[0] == major and current[1] >= minor))
+
+
+def require_version(major, minor):
+    if _cluster_version_ok(major, minor):
+        return lambda test: test
+    else:
+        def skipped(test):
+            # TODO: Any way to log that test.__name__ has been skipped?
+            return lambda *args, **kwargs: True
+        return skipped

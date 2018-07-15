@@ -20,6 +20,9 @@
 
 import collections
 import functools
+import ovirtsdk4.types as types
+import uuid
+from ovirtlago import testlib
 
 # Taken from https://wiki.python.org/moin/PythonDecoratorLibrary#Memoize
 class memoized(object):
@@ -66,7 +69,7 @@ def get_network_fiter_parameters_service(engine, vm_name):
 @memoized
 def get_vm_service(engine, vm_name):
     vms_service = engine.vms_service()
-    vm = vms_service.list(search=vm_name)[0]
+    vm = vms_service.list(search='name={}'.format(vm_name))[0]
     if vm is None:
         return None
     return vms_service.vm_service(vm.id)
@@ -75,14 +78,22 @@ def get_vm_service(engine, vm_name):
 @memoized
 def get_disk_service(engine, disk_name):
     disks_service = engine.disks_service()
-    disk = disks_service.list(search=disk_name)[0]
+    disk = disks_service.list(search='name={}'.format(disk_name))[0]
     return disks_service.disk_service(disk.id)
+
+
+@memoized
+def get_disk_attachments_service(engine, vm_name):
+    vm_service = get_vm_service(engine, vm_name)
+    if vm_service is None:
+        return None
+    return vm_service.disk_attachments_service()
 
 
 @memoized
 def get_template_service(engine, template_name):
     templates_service = engine.templates_service()
-    template = templates_service.list(search=template_name)[0]
+    template = templates_service.list(search='name={}'.format(template_name))[0]
     if template is None:
         return None
     return templates_service.template_service(template.id)
@@ -91,14 +102,14 @@ def get_template_service(engine, template_name):
 @memoized
 def get_pool_service(engine, pool_name):
     vm_pools_service= engine.vm_pools_service()
-    pool = vm_pools_service.list(search=pool_name)[0]
+    pool = vm_pools_service.list(search='name={}'.format(pool_name))[0]
     return vm_pools_service.pool_service(pool.id)
 
 
 @memoized
 def get_storage_domain_service(engine, sd_name):
     storage_domains_service = engine.storage_domains_service()
-    sd = storage_domains_service.list(search=sd_name)[0]
+    sd = storage_domains_service.list(search='name={}'.format(sd_name))[0]
     return storage_domains_service.storage_domain_service(sd.id)
 
 
@@ -106,8 +117,11 @@ def get_storage_domain_vm_service_by_name(sd_service, vm_name):
     vms_service = sd_service.vms_service()
     # StorageDomainVmsService.list has no 'search' parameter and ignores
     # query={'name': 'spam'} so we have to do the filtering ourselves
-    vm = next(vm for vm in vms_service.list() if vm.name == vm_name)
-    return vms_service.vm_service(vm.id)
+    vm = next((vm for vm in vms_service.list() if vm.name == vm_name), None)
+    if vm is None:
+        return None
+    else:
+        return vms_service.vm_service(vm.id)
 
 
 def hosts_in_cluster_v4(root, cluster_name):
@@ -125,8 +139,16 @@ def data_center_service(root, name):
 @memoized
 def get_cluster_service(engine, cluster_name):
     clusters_service = engine.clusters_service()
-    cluster = clusters_service.list(search=cluster_name)[0]
+    cluster = clusters_service.list(search='name={}'.format(cluster_name))[0]
     return clusters_service.cluster_service(cluster.id)
+
+
+@memoized
+def get_vm_snapshots_service(engine, vm_name):
+    vm_service = get_vm_service(engine, vm_name)
+    if vm_service is None:
+        return None
+    return vm_service.snapshots_service()
 
 
 def quote_search_string(s):
@@ -139,3 +161,40 @@ def quote_search_string(s):
         raise ValueError(
             'Quotation marks currently can not be appear in search phrases')
     return '"' + s + '"'
+
+def all_jobs_finished(engine, correlation_id):
+    try:
+        jobs = engine.jobs_service().list(
+            search='correlation_id=%s' % correlation_id
+        )
+    except:
+        jobs = engine.jobs_service().list()
+    return all(job.status != types.JobStatus.STARTED for job in jobs)
+
+
+def assert_finished_within(
+    func,
+    engine,
+    timeout,
+    allowed_exceptions=None,
+    *args,
+    **kwargs
+):
+
+    if 'query' in kwargs:
+        if 'correlation_id' not in kwargs['query']:
+            kwargs['query']['correlation_id'] = uuid.uuid4()
+    else:
+        kwargs['query'] = {'correlation_id': uuid.uuid4()}
+
+    func(*args, **kwargs)
+
+    testlib.assert_true_within(
+        lambda: all_jobs_finished(engine, kwargs['query']['correlation_id']),
+        timeout
+    )
+
+assert_finished_within_long = functools.partial(
+    assert_finished_within,
+    timeout=testlib.LONG_TIMEOUT
+)
