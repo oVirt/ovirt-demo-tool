@@ -31,7 +31,6 @@ from ovirtlago import testlib
 import ovirtsdk4.types as types
 
 import uuid
-import time
 
 import test_utils
 
@@ -130,7 +129,6 @@ def add_vm_blank(api):
     )
 
 
-
 @testlib.with_ovirt_api
 def add_nic(api):
     NIC_NAME = 'eth0'
@@ -144,7 +142,7 @@ def add_nic(api):
     api.vms.get(VM0_NAME).nics.add(nic_params)
 
     nic_params.mac = params.MAC(address=UNICAST_MAC_OUTSIDE_POOL)
-    nic_params.interface='e1000'
+    nic_params.interface = 'e1000'
     api.vms.get(VM2_NAME).nics.add(nic_params)
 
 
@@ -227,19 +225,20 @@ def add_directlun(prefix):
     nt.assert_equals(ret.code, 0)
 
     all_guids = ret.out.splitlines()
-    lun_guid = all_guids[SD_ISCSI_NR_LUNS]  # Take the first unused LUN. 0-(SD_ISCSI_NR_LUNS) are used by iSCSI SD
+    # Take the first unused LUN. 0-(SD_ISCSI_NR_LUNS) are used by iSCSI SD
+    lun_guid = all_guids[SD_ISCSI_NR_LUNS]
 
     ips = iscsi_host.all_ips()
     luns = []
     for ip in ips:
-        lun=types.LogicalUnit(
-                id=lun_guid,
-                address=ip,
-                port=SD_ISCSI_PORT,
-                target=SD_ISCSI_TARGET,
-                username='username',
-                password='password',
-            )
+        lun = types.LogicalUnit(
+            id=lun_guid,
+            address=ip,
+            port=SD_ISCSI_PORT,
+            target=SD_ISCSI_TARGET,
+            username='username',
+            password='password',
+        )
         luns.append(lun)
 
     dlun_params = types.Disk(
@@ -259,8 +258,13 @@ def add_directlun(prefix):
         disk=dlun_params,
         interface=types.DiskInterface.VIRTIO_SCSI))
 
-    disk_service = test_utils.get_disk_service(api.system_service(), DLUN_DISK_NAME)
-    attachment_service = disk_attachments_service.attachment_service(disk_service.get().id)
+    disk_service = test_utils.get_disk_service(
+        api.system_service(),
+        DLUN_DISK_NAME,
+    )
+    attachment_service = disk_attachments_service.attachment_service(
+        disk_service.get().id,
+    )
     nt.assert_not_equal(
         attachment_service.get(),
         None,
@@ -271,7 +275,10 @@ def add_directlun(prefix):
 @testlib.with_ovirt_api4
 def snapshot_cold_merge(api):
     engine = api.system_service()
-    vm1_snapshots_service = test_utils.get_vm_snapshots_service(engine, VM1_NAME)
+    vm1_snapshots_service = test_utils.get_vm_snapshots_service(
+        engine,
+        VM1_NAME,
+    )
     if vm1_snapshots_service is None:
         raise SkipTest('Glance is not available')
 
@@ -299,7 +306,9 @@ def snapshot_cold_merge(api):
     )
     testlib.assert_true_within_long(
         lambda:
-        vm1_snapshots_service.list()[-1].snapshot_status == types.SnapshotStatus.OK
+        vm1_snapshots_service.list()[-1].snapshot_status == (
+            types.SnapshotStatus.OK
+        )
     )
 
     dead_snap2_params = types.Snapshot(
@@ -324,7 +333,9 @@ def snapshot_cold_merge(api):
     )
     testlib.assert_true_within_long(
         lambda:
-        vm1_snapshots_service.list()[-1].snapshot_status == types.SnapshotStatus.OK
+        vm1_snapshots_service.list()[-1].snapshot_status == (
+            types.SnapshotStatus.OK
+        )
     )
 
     snapshot = vm1_snapshots_service.list()[-2]
@@ -336,13 +347,18 @@ def snapshot_cold_merge(api):
     )
     testlib.assert_true_within_long(
         lambda:
-        vm1_snapshots_service.list()[-1].snapshot_status == types.SnapshotStatus.OK
+        vm1_snapshots_service.list()[-1].snapshot_status == (
+            types.SnapshotStatus.OK
+        )
     )
 
 
 @testlib.with_ovirt_api4
 def cold_storage_migration(api):
-    disk_service = test_utils.get_disk_service(api.system_service(), DISK2_NAME)
+    disk_service = test_utils.get_disk_service(
+        api.system_service(),
+        DISK2_NAME,
+    )
 
     # Cold migrate the disk to ISCSI storage domain and then migrate it back
     # to the NFS domain because it is used by other cases that assume the
@@ -379,16 +395,23 @@ def live_storage_migration(api):
         query={'correlation_id': correlation_id}
     )
 
-    testlib.assert_true_within_long(lambda: test_utils.all_jobs_finished(engine, correlation_id))
+    testlib.assert_true_within_long(
+        lambda: test_utils.all_jobs_finished(engine, correlation_id)
+    )
 
     # Assert that the disk is on the correct storage domain,
     # its status is OK and the snapshot created for the migration
     # has been merged
     testlib.assert_true_within_long(
-        lambda: api.follow_link(disk_service.get().storage_domains[0]).name == SD_ISCSI_NAME
+        lambda: api.follow_link(
+            disk_service.get().storage_domains[0]
+        ).name == SD_ISCSI_NAME
     )
 
-    vm0_snapshots_service = test_utils.get_vm_snapshots_service(engine, VM0_NAME)
+    vm0_snapshots_service = test_utils.get_vm_snapshots_service(
+        engine,
+        VM0_NAME,
+    )
     testlib.assert_true_within_long(
         lambda: len(vm0_snapshots_service.list()) == 1
     )
@@ -413,7 +436,10 @@ def export_vm(api):
 @testlib.with_ovirt_api4
 def verify_vm_exported(api):
     engine = api.system_service()
-    storage_domain_service = test_utils.get_storage_domain_service(engine, SD_TEMPLATES_NAME)
+    storage_domain_service = test_utils.get_storage_domain_service(
+        engine,
+        SD_TEMPLATES_NAME,
+    )
 
     testlib.assert_true_within_short(
         lambda:
@@ -426,11 +452,22 @@ def verify_vm_exported(api):
 @testlib.with_ovirt_api4
 def import_vm_as_clone(api):
     engine = api.system_service()
-    storage_domain_service = test_utils.get_storage_domain_service(engine, SD_TEMPLATES_NAME)
-    vm_to_import = test_utils.get_storage_domain_vm_service_by_name(storage_domain_service, VM1_NAME)
+    storage_domain_service = test_utils.get_storage_domain_service(
+        engine,
+        SD_TEMPLATES_NAME,
+    )
+    vm_to_import = test_utils.get_storage_domain_vm_service_by_name(
+        storage_domain_service,
+        VM1_NAME,
+    )
 
     if vm_to_import is None:
-        raise SkipTest("VM: '%s' not found on export domain: '%s'" % (VM1_NAME, SD_TEMPLATES_NAME))
+        raise SkipTest(
+            "VM: '%s' not found on export domain: '%s'" % (
+                VM1_NAME,
+                SD_TEMPLATES_NAME,
+            )
+        )
 
     vm_to_import.import_(
         storage_domain=types.StorageDomain(
@@ -457,7 +494,7 @@ def verify_vm_import(api):
     # Remove the imported VM
     num_of_vms = len(engine.vms_service().list())
     vm_service.remove()
-    nt.assert_true(len(engine.vms_service().list()) == (num_of_vms-1))
+    nt.assert_true(len(engine.vms_service().list()) == (num_of_vms - 1))
 
 
 @testlib.with_ovirt_api
@@ -465,7 +502,12 @@ def add_vm_template(api):
     #TODO: Fix the exported domain generation.
     #For the time being, add VM from Glance imported template.
     if api.templates.get(name=TEMPLATE_CIRROS) is None:
-        raise SkipTest('%s: template %s not available.' % (add_vm_template.__name__, TEMPLATE_CIRROS))
+        raise SkipTest(
+            '%s: template %s not available.' % (
+                add_vm_template.__name__,
+                TEMPLATE_CIRROS,
+            )
+        )
 
     vm_memory = 512 * MB
     vm_params = params.VM(
@@ -552,8 +594,12 @@ def add_filter_parameter(prefix):
     engine = prefix.virt_env.engine_vm()
     ovirt_api4 = engine.get_api(api_ver=4)
     vm_gw = '.'.join(engine.ip().split('.')[0:3] + ['1'])
-    network_filter_parameters_service = test_utils.get_network_fiter_parameters_service(
-        ovirt_api4.system_service(), VM0_NAME)
+    network_filter_parameters_service = (
+        test_utils.get_network_fiter_parameters_service(
+            ovirt_api4.system_service(),
+            VM0_NAME,
+        )
+    )
 
     nt.assert_true(
         network_filter_parameters_service.add(
@@ -572,6 +618,7 @@ def add_filter_parameter(prefix):
             )
         )
     )
+
 
 @testlib.with_ovirt_prefix
 def vm_run(prefix):
@@ -625,7 +672,7 @@ def vm_run(prefix):
         ),
     )
     api.vms.get(VM0_NAME).start(start_params)
-    start_params.vm.initialization.cloud_init=params.CloudInit(
+    start_params.vm.initialization.cloud_init = params.CloudInit(
         host=params.Host(
             address='VM2'
         ),
@@ -657,8 +704,10 @@ def ha_recovery(prefix):
     events = engine.events_service()
     testlib.assert_true_within_short(
         lambda:
-        (next(e for e in events.list(from_=last_event) if e.code == 9602)).code == 9602,
-         allowed_exceptions=[StopIteration]
+        (
+            next(e for e in events.list(from_=last_event) if e.code == 9602)
+        ).code == 9602,
+        allowed_exceptions=[StopIteration]
     )
     testlib.assert_true_within_long(
         lambda:
@@ -690,13 +739,16 @@ def template_export(api):
 
     template_cirros = test_utils.get_template_service(engine, TEMPLATE_CIRROS)
     if template_cirros is None:
-        raise SkipTest('{0}: template {1} is missing'.format(
-            template_export.__name__,
-            TEMPLATE_CIRROS
+        raise SkipTest(
+            '{0}: template {1} is missing'.format(
+                template_export.__name__,
+                TEMPLATE_CIRROS,
             )
         )
 
-    storage_domain = engine.storage_domains_service().list(search=SD_TEMPLATES_NAME)[0]
+    storage_domain = engine.storage_domains_service().list(
+        search=SD_TEMPLATES_NAME
+    )[0]
     template_cirros.export(
         storage_domain=types.StorageDomain(
             id=storage_domain.id,
@@ -722,7 +774,7 @@ def add_vm_pool(api):
             use_latest_template_version=True,
         )
     )
-    vm_service = test_utils.get_vm_service(engine, VMPOOL_NAME+'-1')
+    vm_service = test_utils.get_vm_service(engine, VMPOOL_NAME + '-1')
     testlib.assert_true_within_short(
         lambda:
         vm_service.get().status == types.VmStatus.DOWN,
@@ -758,7 +810,10 @@ def update_template_version(api):
 
 @testlib.with_ovirt_api4
 def update_vm_pool(api):
-    pool_service = test_utils.get_pool_service(api.system_service(), VMPOOL_NAME)
+    pool_service = test_utils.get_pool_service(
+        api.system_service(),
+        VMPOOL_NAME,
+    )
     pool_service.update(
         pool=types.VmPool(
             max_user_vms=2
@@ -771,27 +826,34 @@ def update_vm_pool(api):
 
 @testlib.with_ovirt_api4
 def remove_vm_pool(api):
-    pool_service = test_utils.get_pool_service(api.system_service(), VMPOOL_NAME)
+    pool_service = test_utils.get_pool_service(
+        api.system_service(),
+        VMPOOL_NAME,
+    )
     pool_service.remove()
     vm_pools_service = api.system_service().vm_pools_service()
     nt.assert_true(
-         len(vm_pools_service.list()) == 0
+        len(vm_pools_service.list()) == 0
     )
 
 
 @testlib.with_ovirt_api4
 def template_update(api):
-    template_cirros = test_utils.get_template_service(api.system_service(), TEMPLATE_CIRROS)
+    template_cirros = test_utils.get_template_service(
+        api.system_service(),
+        TEMPLATE_CIRROS,
+    )
 
     if template_cirros is None:
-        raise SkipTest('{0}: template {1} is missing'.format(
-            template_update.__name__,
-            TEMPLATE_CIRROS
+        raise SkipTest(
+            '{0}: template {1} is missing'.format(
+                template_update.__name__,
+                TEMPLATE_CIRROS,
+            )
         )
-    )
     new_comment = "comment by ovirt-system-tests"
     template_cirros.update(
-        template = types.Template(
+        template=types.Template(
             comment=new_comment
         )
     )
@@ -849,6 +911,7 @@ def hotplug_cpu(api):
         vm_service.get().cpu.topology.sockets == 2
     )
 
+
 @testlib.with_ovirt_api4
 def next_run_unplug_cpu(api):
     engine = api.system_service()
@@ -870,8 +933,7 @@ def next_run_unplug_cpu(api):
     )
     vm_service.reboot()
     testlib.assert_true_within_long(
-        lambda:
-         vm_service.get().status == types.VmStatus.UP
+        lambda: vm_service.get().status == types.VmStatus.UP
     )
     nt.assert_true(
         vm_service.get().cpu.topology.sockets == 1
@@ -916,7 +978,9 @@ def hotplug_disk(api):
 
     disks_service = api.system_service().disks_service()
     disk_service = disks_service.disk_service(disk_attachment.disk.id)
-    attachment_service = disk_attachments_service.attachment_service(disk_attachment.id)
+    attachment_service = disk_attachments_service.attachment_service(
+        disk_attachment.id,
+    )
 
     testlib.assert_true_within_short(
         lambda:
@@ -931,7 +995,9 @@ def hotunplug_disk(api):
     vm_service = test_utils.get_vm_service(engine, VM0_NAME)
     disk_service = test_utils.get_disk_service(engine, DISK0_NAME)
     disk_attachments_service = vm_service.disk_attachments_service()
-    disk_attachment = disk_attachments_service.attachment_service(disk_service.get().id)
+    disk_attachment = disk_attachments_service.attachment_service(
+        disk_service.get().id,
+    )
 
     nt.assert_true(
         disk_attachment.update(types.DiskAttachment(active=False))
@@ -959,7 +1025,7 @@ def suspend_resume_vm(api):
 def verify_suspend_resume_vm(api):
     testlib.assert_true_within(
         func=lambda: api.vms.get(VM0_NAME).status.state == 'up',
-        timeout=20*60
+        timeout=20 * 60
     )
 
 
