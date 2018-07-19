@@ -92,7 +92,7 @@ get_version() {
 
         example:
         4.2.0-0-1-g9577328 -> 4.2.0-0.1.g9577328
-        4.2.0-1 -> 4.2.0-0.0
+        4.2.0-1 -> 4.2.0-1.0
     '
     local tag_pattern=${1:-'*'}
     local version && version="$(git describe --tags --match "$tag_pattern")"
@@ -100,7 +100,7 @@ get_version() {
     local suffix="${version#*-}"
 
     if [[ "$suffix" =~ ^[0-9]+$ ]]; then
-        suffix="0.0"
+        suffix="${suffix}.0"
     else
         suffix="${suffix//-/.}"
     fi
