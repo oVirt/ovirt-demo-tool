@@ -1,5 +1,5 @@
 [gerrit]
 host=gerrit.ovirt.org
-defaultbranch=master
+defaultbranch=4.3
 project=ovirt-demo-tool
 port=29418
