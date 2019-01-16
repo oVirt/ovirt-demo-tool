@@ -838,14 +838,20 @@ def update_vm_pool(api):
 
 @testlib.with_ovirt_api4
 def remove_vm_pool(api):
-    pool_service = test_utils.get_pool_service(
-        api.system_service(),
-        VMPOOL_NAME,
-    )
-    pool_service.remove()
-    vm_pools_service = api.system_service().vm_pools_service()
-    nt.assert_true(
-        len(vm_pools_service.list()) == 0
+    engine = api.system_service()
+    pool_service = test_utils.get_pool_service(engine, VMPOOL_NAME)
+    correlation_id = uuid.uuid4()
+    with test_utils.TestEvent(engine, [321, 304]):
+        # USER_REMOVE_VM_POOL_INITIATED(321) event
+        # USER_REMOVE_VM_POOL(304) event
+        pool_service.remove(query={'correlation_id': correlation_id})
+        vm_pools_service = api.system_service().vm_pools_service()
+        nt.assert_true(
+            len(vm_pools_service.list()) == 0
+        )
+    testlib.assert_true_within_long(
+        lambda:
+        test_utils.all_jobs_finished(engine, correlation_id)
     )
 
 
