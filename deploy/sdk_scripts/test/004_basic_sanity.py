@@ -29,6 +29,8 @@ from lago import utils
 from ovirtlago import testlib
 
 import ovirtsdk4.types as types
+# TODO: import individual SDKv4 types directly (but don't forget sdk4.Error)
+import ovirtsdk4 as sdk4
 
 import uuid
 
@@ -202,18 +204,28 @@ def add_disk(api):
             disk_service.get().status == types.DiskStatus.OK
         )
 
+@testlib.with_ovirt_api4
+def add_graphics_console(api):
+    # remove VNC
+    engine = api.system_service()
+    vm = test_utils.get_vm_service(engine, VM0_NAME)
+    consoles_service = vm.graphics_consoles_service()
+    console = consoles_service.console_service('766e63')
+    console.remove()
+    testlib.assert_true_within_short(
+        lambda:
+        len(consoles_service.list()) == 1
+    )
 
-@testlib.with_ovirt_api
-def add_console(api):
-    vm = api.vms.get(VM0_NAME)
-    vm.graphicsconsoles.add(
-        params.GraphicsConsole(
-            protocol='vnc',
+    # and add it back
+    consoles_service.add(
+        sdk4.types.GraphicsConsole(
+            protocol=sdk4.types.GraphicsType.VNC,
         )
     )
     testlib.assert_true_within_short(
         lambda:
-        len(api.vms.get(VM0_NAME).graphicsconsoles.list()) == 2
+        len(consoles_service.list()) == 2
     )
 
 
@@ -1048,7 +1060,7 @@ _TEST_LIST = [
     add_vm_blank,
     add_vm_template,
     add_nic,
-    add_console,
+    add_graphics_console,
     add_directlun,
     add_filter,
     add_filter_parameter,
