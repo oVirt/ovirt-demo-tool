@@ -17,8 +17,8 @@ ARTIFACT_NAME=ovirt-orb
 RELEASE_RPM=http://resources.ovirt.org/pub/yum-repo/ovirt-release42.rpm
 
 # Will be used in LagoInitFile
-ENGINE_TEMPLATE=el7.4-base-1
-HOST_TEMPLATE=el7.4-base-1
+ENGINE_TEMPLATE=el7.6-base
+HOST_TEMPLATE=el7.6-base
 HOST_COUNT=2
 
 TAG_PATTERN='4*'
