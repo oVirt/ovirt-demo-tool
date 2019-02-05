@@ -14,7 +14,7 @@ SUITE_NAME=ovirt-orb-4-3
 ARTIFACT_NAME=ovirt-orb
 
 # oVirt version to install
-RELEASE_RPM=http://resources.ovirt.org/pub/yum-repo/ovirt-release43-pre.rpm
+RELEASE_RPM=http://resources.ovirt.org/pub/yum-repo/ovirt-release43.rpm
 
 # Will be used in LagoInitFile
 ENGINE_TEMPLATE=el7.6-base
