@@ -204,30 +204,18 @@ def add_disk(api):
             disk_service.get().status == types.DiskStatus.OK
         )
 
-@testlib.with_ovirt_api4
+@testlib.with_ovirt_api
 def add_graphics_console(api):
-    # remove VNC
-    engine = api.system_service()
-    vm = test_utils.get_vm_service(engine, VM0_NAME)
-    consoles_service = vm.graphics_consoles_service()
-    console = consoles_service.console_service('766e63')
-    console.remove()
-    testlib.assert_true_within_short(
-        lambda:
-        len(consoles_service.list()) == 1
-    )
-
-    # and add it back
-    consoles_service.add(
-        sdk4.types.GraphicsConsole(
-            protocol=sdk4.types.GraphicsType.VNC,
+    vm = api.vms.get(VM0_NAME)
+    vm.graphicsconsoles.add(
+        params.GraphicsConsole(
+            protocol='vnc',
         )
     )
     testlib.assert_true_within_short(
         lambda:
-        len(consoles_service.list()) == 2
+        len(api.vms.get(VM0_NAME).graphicsconsoles.list()) == 2
     )
-
 
 @testlib.with_ovirt_prefix
 def add_directlun(prefix):
