@@ -35,6 +35,7 @@ import ovirtsdk4 as sdk4
 import uuid
 
 import test_utils
+from test_utils import versioning
 
 
 MB = 2 ** 20
@@ -46,7 +47,7 @@ TEST_DC = 'test-dc'
 TEST_CLUSTER = 'test-cluster'
 TEMPLATE_BLANK = 'Blank'
 TEMPLATE_CENTOS7 = 'centos7_template'
-TEMPLATE_CIRROS = 'CirrOS_0.3.5_for_x86_64_glance_template'
+TEMPLATE_CIRROS = versioning.guest_os_template_name()
 
 SD_NFS_NAME = 'nfs'
 SD_SECOND_NFS_NAME = 'second-nfs'
@@ -61,7 +62,7 @@ VMPOOL_NAME = 'test-pool'
 DISK0_NAME = '%s_disk0' % VM0_NAME
 DISK1_NAME = '%s_disk1' % VM1_NAME
 DISK2_NAME = '%s_disk2' % VM2_NAME
-GLANCE_DISK_NAME = 'CirrOS_0.3.5_for_x86_64_glance_disk'
+GLANCE_DISK_NAME = versioning.guest_os_glance_disk_name()
 
 SD_ISCSI_HOST_NAME = testlib.get_prefixed_name('engine')
 SD_ISCSI_TARGET = 'iqn.2014-07.org.ovirt:storage'

@@ -35,6 +35,7 @@ from ovirtlago import testlib
 
 import test_utils
 from test_utils import network_utils_v4
+from test_utils import versioning
 
 # TODO: use SDKv4 unconditionally, where possible (as in other test scenarios)
 API_V3_ONLY = os.getenv('API_V3_ONLY', False)
@@ -77,9 +78,9 @@ SD_TEMPLATES_PATH = '/exports/nfs/exported'
 
 SD_GLANCE_NAME = 'ovirt-image-repository'
 GLANCE_AVAIL = False
-CIRROS_IMAGE_NAME = 'CirrOS 0.3.5 for x86_64'
-GLANCE_DISK_NAME = CIRROS_IMAGE_NAME.replace(" ", "_") + '_glance_disk'
-TEMPLATE_CIRROS = CIRROS_IMAGE_NAME.replace(" ", "_") + '_glance_template'
+CIRROS_IMAGE_NAME = versioning.guest_os_image_name()
+GLANCE_DISK_NAME = versioning.guest_os_glance_disk_name()
+TEMPLATE_CIRROS = versioning.guest_os_template_name()
 GLANCE_SERVER_URL = 'http://glance.ovirt.org:9292/'
 
 # Network

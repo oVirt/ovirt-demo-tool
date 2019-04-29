@@ -20,9 +20,9 @@
 
 
 import os
+import re
 
-
-_DC_VERSION = '4.2'
+_DC_VERSION = '4.3'
 
 
 def cluster_version():
@@ -44,3 +44,21 @@ def require_version(major, minor):
             # TODO: Any way to log that test.__name__ has been skipped?
             return lambda *args, **kwargs: True
         return skipped
+
+def guest_os_image_name():
+    if _cluster_version_ok(4, 1):
+        return 'CirrOS 0.4.0 for x86_64'
+    else:
+        return 'CirrOS 0.4.0 (qcow2 v0.10) for x86_64'
+
+
+def _transformed_guest_os_image_name():
+    return re.sub('[ ()]', '_', guest_os_image_name())
+
+
+def guest_os_glance_disk_name():
+    return _transformed_guest_os_image_name()[:24] + '_glance_disk'
+
+
+def guest_os_template_name():
+    return _transformed_guest_os_image_name()[:24] + '_glance_template'
