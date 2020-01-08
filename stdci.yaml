@@ -1,0 +1,5 @@
+stages:
+  - check-patch
+  - check-merged
+runtime-requirements:
+  support-nesting-level: 2
